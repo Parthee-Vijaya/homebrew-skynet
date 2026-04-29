@@ -1,8 +1,8 @@
 class Skynet < Formula
   desc "S.K.Y.N.E.T. — System for Knowledge, Yielding Neural Engagement & Tasks"
   homepage "https://github.com/Parthee-Vijaya/skynet"
-  url "https://github.com/Parthee-Vijaya/skynet/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "1c6f9eaa4fc90c048402e03262cf7911e30ec6cd6b129fce958208327defff3d"
+  url "https://github.com/Parthee-Vijaya/skynet/archive/refs/tags/v0.1.1.tar.gz"
+  sha256 "ee126dc7ea686501f4d026d9c2812ff3a3867ecd9b07360ecc87abb904cbfd33"
   license "MIT"
   head "https://github.com/Parthee-Vijaya/skynet.git", branch: "main"
 
