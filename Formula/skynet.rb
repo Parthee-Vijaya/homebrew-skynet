@@ -43,6 +43,75 @@ class Skynet < Formula
       cd "#{libexec}" && exec "#{node_bin}/npm" run start
     SH
     chmod 0755, bin/"skynet-daemon"
+
+    (bin/"skynet-uninstall").write <<~'SH'
+      #!/usr/bin/env bash
+      # Komplet afinstallation af S.K.Y.N.E.T.
+      # Re-exec'er fra /tmp saa scriptet ikke forsvinder under brew uninstall.
+      set -u
+
+      if [[ "${SKYNET_UNINSTALL_REEXEC:-0}" != "1" ]]; then
+        TMPCOPY="$(mktemp /tmp/skynet-uninstall.XXXXXX)"
+        cp "$0" "$TMPCOPY"
+        chmod +x "$TMPCOPY"
+        SKYNET_UNINSTALL_REEXEC=1 exec "$TMPCOPY" "$@"
+      fi
+
+      info() { printf '\033[0;34m▌\033[0m %s\n' "$*"; }
+      ok()   { printf '\033[0;32m✓\033[0m %s\n' "$*"; }
+      warn() { printf '\033[0;33m⚠\033[0m %s\n' "$*"; }
+      step() { printf '\n\033[0;34m━━━ %s ━━━\033[0m\n' "$*"; }
+
+      DOMAIN="gui/$(id -u)"
+      LAUNCH_AGENTS=(com.skynet.portal com.skynet.daemon com.paseo.daemon com.jarvis.dashboard)
+
+      step "Stopper services"
+      brew services stop skynet >/dev/null 2>&1 && ok "brew service stoppet" || true
+      for L in "${LAUNCH_AGENTS[@]}"; do
+        if launchctl print "$DOMAIN/$L" >/dev/null 2>&1; then
+          launchctl bootout "$DOMAIN/$L" 2>/dev/null && ok "$L stoppet" || warn "$L kunne ikke stoppes"
+        fi
+      done
+
+      step "Fjerner LaunchAgent-plists"
+      for L in "${LAUNCH_AGENTS[@]}"; do
+        PLIST="$HOME/Library/LaunchAgents/${L}.plist"
+        if [[ -f "$PLIST" ]]; then
+          rm -f "$PLIST" && ok "fjernet $PLIST"
+        fi
+      done
+
+      step "Fjerner data og logs"
+      if [[ -d "$HOME/skynet" ]]; then
+        rm -rf "$HOME/skynet" && ok "fjernet ~/skynet"
+      fi
+      rm -f "$HOME/Library/Logs/"skynet-*.log "$HOME/Library/Logs/"skynet.{out,err}.log 2>/dev/null
+      rm -f "$HOME/Library/Logs/"paseo.{out,err}.log 2>/dev/null
+      rm -f "$HOME/Library/Logs/"jarvis.{out,err}.log 2>/dev/null
+      ok "logs ryddet"
+
+      step "Fjerner global Paseo CLI"
+      if command -v paseo >/dev/null 2>&1; then
+        npm uninstall -g @getpaseo/cli >/dev/null 2>&1 && ok "paseo CLI fjernet" || warn "paseo CLI kunne ikke fjernes"
+      else
+        ok "paseo CLI ikke installeret"
+      fi
+
+      step "Fjerner brew-installation"
+      if brew list skynet >/dev/null 2>&1; then
+        brew uninstall skynet && ok "brew uninstall OK" || warn "brew uninstall fejlede"
+      fi
+      if brew tap | grep -qi 'parthee-vijaya/skynet'; then
+        brew untap Parthee-Vijaya/skynet 2>/dev/null && ok "tap fjernet"
+      fi
+
+      step "Faerdig"
+      ok "Skynet er afinstalleret"
+      printf '\n\033[2mHvis du vil have brew til ogsaa at fjerne ubrugte dependencies:\n  brew autoremove\033[0m\n\n'
+
+      rm -f "$0"
+    SH
+    chmod 0755, bin/"skynet-uninstall"
   end
 
   service do
@@ -70,6 +139,9 @@ class Skynet < Formula
 
       Opdater til nyeste version:
         brew update && brew upgrade skynet
+
+      Afinstaller alt (services, plists, repo, logs, brew):
+        skynet-uninstall
 
       Hvis du vil have den fulde LaunchAgent-opsætning fra repoet
       (portal + daemon + Paseo + HUD), kør den klassiske installer:

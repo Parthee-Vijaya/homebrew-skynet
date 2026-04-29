@@ -45,6 +45,14 @@ nohup skynet-portal > ~/Library/Logs/skynet-portal.log 2>&1 &
 
 ## Afinstallation
 
+Hurtigt — fjerner alt (services, plists, repo, logs, brew + tap):
+
+```bash
+skynet-uninstall
+```
+
+Eller manuelt:
+
 ```bash
 brew services stop skynet
 brew uninstall skynet
