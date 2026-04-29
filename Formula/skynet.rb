@@ -7,13 +7,16 @@ class Skynet < Formula
   head "https://github.com/Parthee-Vijaya/skynet.git", branch: "main"
 
   depends_on "git"
-  depends_on "node"
   depends_on :macos
+  depends_on "node"
 
   def install
     libexec.install Dir["*", ".npmrc"]
 
     cd libexec do
+      # NB: std_npm_args bruges normalt til at publicere én npm-pakke;
+      # vi bygger en monorepo med workspaces in-place og kan derfor ikke
+      # bruge det her. FormulaAudit/StdNpmArgs-warningen kan ignoreres.
       system "npm", "install", "--legacy-peer-deps", "--no-audit", "--no-fund"
       system "npm", "run", "build:daemon"
       system "npm", "run", "build", "--workspace=@skynet/portal"
@@ -75,7 +78,7 @@ class Skynet < Formula
   end
 
   test do
-    assert_predicate bin/"skynet", :exist?
+    assert_path_exists bin/"skynet"
     assert_predicate bin/"skynet", :executable?
   end
 end
